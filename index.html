@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My AI Workspace</title>
+  <style>
+    :root {
+      --bg-main: #0f1117;
+      --bg-sidebar: #161922;
+      --bg-card: #1e222d;
+      --bg-input: #1a1d27;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #2a2f3d;
+      --accent: #7c3aed;
+      --accent-hover: #6d28d9;
+      --accent-soft: rgba(124, 58, 237, 0.15);
+      --user-bubble: var(--accent);
+      --ai-bubble: #1e222d;
+      --danger: #ef4444;
+      --radius: 14px;
+    }
+
+    [data-theme="light"] {
+      --bg-main: #f8fafc;
+      --bg-sidebar: #ffffff;
+      --bg-card: #ffffff;
+      --bg-input: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --ai-bubble: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    }
+
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      height: 100dvh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s ease;
+      z-index: 20;
+    }
+
+    .sidebar-header {
+      padding: 20px 16px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .btn-new-chat {
+      margin: 14px 16px 8px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-new-chat:hover {
+      background: var(--accent-hover);
+    }
+
+    .rooms-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .room-item {
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+
+    .room-item:hover {
+      background: var(--accent-soft);
+      color: var(--text-main);
+    }
+
+    .room-item.active {
+      background: var(--accent-soft);
+      color: var(--text-main);
+      font-weight: 600;
+      border: 1px solid rgba(124, 58, 237, 0.3);
+    }
+
+    .room-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .room-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 14px;
+    }
+
+    .sidebar-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-ghost {
+      flex: 1;
+      padding: 9px 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    .btn-ghost:hover {
+      background: var(--accent-soft);
+    }
+
+    /* Main Chat Area */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+    }
+
+    .chat-header {
+      height: 62px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-main);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .current-room-meta h2 {
+      font-size: 16px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .current-room-meta p {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 420px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 7px 11px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+
+    .icon-btn:hover {
+      color: var(--text-main);
+      border-color: var(--accent);
+    }
+
+    /* Messages */
+    .messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .empty-state {
+      margin: auto;
+      text-align: center;
+      max-width: 400px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .big-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+
+    .empty-state h3 {
+      color: var(--text-main);
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .message {
+      max-width: 78%;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      align-self: flex-end;
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+    }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-size: 14.5px;
+      line-height: 1.55;
+      word-wrap: break-word;
+    }
+
+    .message.user .bubble {
+      background: var(--user-bubble);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant .bubble {
+      background: var(--ai-bubble);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      border-bottom-left-radius: 4px;
+    }
+
+    .bubble pre {
+      background: rgba(0, 0, 0, 0.35);
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 8px 0;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .bubble code {
+      background: rgba(128, 128, 128, 0.2);
+      padding: 2px 5px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .msg-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 0 4px;
+    }
+
+    .message.user .msg-time {
+      text-align: right;
+    }
+
+    /* Typing dots */
+    .typing {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px 2px;
+    }
+
+    .typing span {
+      width: 6px;
+      height: 6px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+      40% { transform: scale(1.1); opacity: 1; }
+    }
+
+    /* Input Area */
+    .input-wrapper {
+      padding: 14px 20px 18px;
+      background: var(--bg-main);
+      border-top: 1px solid var(--border);
+    }
+
+    .input-box {
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 8px 10px 8px 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      transition: border-color 0.2s;
+    }
+
+    .input-box:focus-within {
+      border-color: var(--accent);
+    }
+
+    textarea {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 14.5px;
+      line-height: 1.45;
+      resize: none;
+      max-height: 160px;
+      padding: 6px 0;
+      outline: none;
+    }
+
+    .send-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      width: 38px;
+      height: 38px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .send-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+
+    .status-bar {
+      max-width: 860px;
+      margin: 6px auto 0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      padding: 0 4px;
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 480px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal h3 {
+      font-size: 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .field input, .field textarea, .field select {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .field input:focus, .field textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .color-swatches {
+      display: flex;
+      gap: 10px;
+    }
+
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    .swatch.active {
+      border-color: #fff;
+      transform: scale(1.1);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-right: auto;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .mobile-menu-btn {
+        display: block;
+      }
+      .message {
+        max-width: 88%;
+      }
+      .current-room-meta p {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span>Personal AI</span>
+      </div>
+      <button class="icon-btn" id="themeToggle" title="Сменить тему">🌓</button>
+    </div>
+
+    <button class="btn-new-chat" id="openNewRoomBtn">+ Новый чат</button>
+
+    <div class="rooms-list" id="roomsList"></div>
+
+    <div class="sidebar-footer">
+      <button class="btn-ghost" id="openSettingsBtn">⚙️ Настройки и Webhook</button>
+    </div>
+  </aside>
+
+  <!-- Main Chat -->
+  <main class="main">
+    <header class="chat-header">
+      <div class="header-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <div class="current-room-meta">
+          <h2 id="activeRoomTitle">Загрузка...</h2>
+          <p id="activeRoomPromptPreview"></p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="editRoomBtn" title="Настроить промпт комнаты">✏️ Промпт</button>
+        <button class="icon-btn" id="clearChatBtn" title="Очистить сообщения">🗑️</button>
+      </div>
+    </header>
+
+    <div class="messages-container" id="messagesContainer"></div>
+
+    <div class="input-wrapper">
+      <div class="input-box">
+        <textarea id="messageInput" rows="1" placeholder="Напиши сообщение... (Enter — отправить, Shift+Enter — перенос)"></textarea>
+        <button class="send-btn" id="sendBtn" title="Отправить">➤</button>
+      </div>
+      <div class="status-bar">
+        <span id="webhookStatus">Webhook: не подключен (демо-режим)</span>
+        <span id="contextStatus">Контекст: 20 сообщ.</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal: Settings -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal">
+      <h3>⚙️ Настройки ассистента</h3>
+
+      <div class="field">
+        <label>Google Apps Script / Webhook URL (POST)</label>
+        <input type="url" id="webhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
+      </div>
+
+      <div class="field">
+        <label>Глубина контекста (сколько последних сообщений слать в историю)</label>
+        <input type="number" id="historyLimitInput" min="0" max="100" value="20" />
+      </div>
+
+      <div class="field">
+        <label>Акцентный цвет интерфейса</label>
+        <div class="color-swatches" id="colorSwatches">
+          <div class="swatch" data-color="#7c3aed" style="background:#7c3aed"></div>
+          <div class="swatch" data-color="#10b981" style="background:#10b981"></div>
+          <div class="swatch" data-color="#ec4899" style="background:#ec4899"></div>
+          <div class="swatch" data-color="#f59e0b" style="background:#f59e0b"></div>
+          <div class="swatch" data-color="#06b6d4" style="background:#06b6d4"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Резервная копия данных (чаты и настройки)</label>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-ghost" id="exportDataBtn">⬇️ Скачать JSON</button>
+          <button class="btn-ghost" id="importDataBtn">⬆️ Загрузить JSON</button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeModals()">Отмена</button>
+        <button class="btn-primary" id="saveSettingsBtn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Create / Edit Room -->
+  <div class="modal-backdrop" id="roomModal">
+    <div class="modal">
+      <h3 id="roomModalTitle">Новая комната</h3>
+
+      <div style="display:flex; gap:10px;">
+        <div class="field" style="width:70px;">
+          <label>Иконка</label>
+          <input type="text" id="roomIconInput" value="💬" maxlength="4" style="text-align:center;" />
+        </div>
+        <div class="field" style="flex:1;">
+          <label>Название чата</label>
+          <input type="text" id="roomNameInput" placeholder="Например: Проекты и задачи" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Системный промпт (характер и роль ИИ в этой комнате)</label>
+        <textarea id="roomPromptInput" rows="5" placeholder="Опиши, как ассистент должен общаться в этом чате, что учитывать и какую роль выполнять..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-danger" id="deleteRoomBtn" style="display:none;">Удалить чат</button>
+        <button class="btn-ghost" onclick="closeModals()">Отмена</button>
+        <button class="btn-primary" id="saveRoomBtn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_ROOMS = [
+      {
+        id: 'room_general',
+        icon: '🧠',
+        name: 'Личный ассистент',
+        prompt: 'Ты мой личный ИИ-помощник. Общайся живо, без канцелярита, воды и шаблонной вежливости. Помогай структурировать мысли и рутину.',
+        messages: []
+      },
+      {
+        id: 'room_projects',
+        icon: '🚀',
+        name: 'Проекты и Make',
+        prompt: 'Ты технический напарник и продакт-менеджер. Помогай проектировать автоматизации в Make, архитектуру веб-приложений и декомпозировать задачи.',
+        messages: []
+      },
+      {
+        id: 'room_brainstorm',
+        icon: '💡',
+        name: 'Идеи и заметки',
+        prompt: 'Ты креативный спарринг-партнёр. Помогай развивать сырые идеи, задавай точные вопросы и предлагай нестандартные решения.',
+        messages: []
+      }
+    ];
+
+    const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzks4JXgA8XwItUgGwwBiXw3s0vHBGeQF7xUfHJ7iOszAEnW9DHdmIcKfmfaHkEexgPbg/exec';
+
+    let state = {
+      rooms: [],
+      activeRoomId: null,
+      settings: {
+        webhookUrl: DEFAULT_WEBHOOK_URL,
+        historyLimit: 20,
+        theme: 'dark',
+        accent: '#7c3aed'
+      }
+    };
+
+    let editingRoomId = null;
+
+    // Load & Save
+    function loadState() {
+      const saved = localStorage.getItem('personal_ai_workspace_v1');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          state = {
+            ...state,
+            ...parsed,
+            settings: {
+              ...state.settings,
+              ...(parsed.settings || {}),
+              webhookUrl: (parsed.settings && parsed.settings.webhookUrl) ? parsed.settings.webhookUrl : DEFAULT_WEBHOOK_URL
+            }
+          };
+        } catch (e) {
+          console.error('Ошибка чтения localStorage', e);
+        }
+      }
+      if (!state.rooms || state.rooms.length === 0) {
+        state.rooms = JSON.parse(JSON.stringify(DEFAULT_ROOMS));
+      }
+      if (!state.activeRoomId || !state.rooms.find(r => r.id === state.activeRoomId)) {
+        state.activeRoomId = state.rooms[0].id;
+      }
+      applyThemeAndColors();
+    }
+
+    function saveState() {
+      localStorage.setItem('personal_ai_workspace_v1', JSON.stringify(state));
+      updateStatusBar();
+    }
+
+    function applyThemeAndColors() {
+      document.documentElement.setAttribute('data-theme', state.settings.theme);
+      document.documentElement.style.setProperty('--accent', state.settings.accent);
+      document.documentElement.style.setProperty('--accent-hover', state.settings.accent);
+      document.documentElement.style.setProperty('--accent-soft', hexToRgba(state.settings.accent, 0.15));
+    }
+
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function getActiveRoom() {
+      return state.rooms.find(r => r.id === state.activeRoomId);
+    }
+
+    // Render UI
+    function renderSidebar() {
+      const list = document.getElementById('roomsList');
+      list.innerHTML = '';
+      state.rooms.forEach(room => {
+        const el = document.createElement('div');
+        el.className = `room-item ${room.id === state.activeRoomId ? 'active' : ''}`;
+        el.innerHTML = `
+          <div class="room-info">
+            <span>${escapeHtml(room.icon || '💬')}</span>
+            <span class="room-title">${escapeHtml(room.name)}</span>
+          </div>
+          <span style="font-size:11px; opacity:0.6;">${room.messages.length || ''}</span>
+        `;
+        el.onclick = () => {
+          state.activeRoomId = room.id;
+          saveState();
+          renderAll();
+          document.getElementById('sidebar').classList.remove('open');
+        };
+        list.appendChild(el);
+      });
+    }
+
+    function renderChat() {
+      const room = getActiveRoom();
+      if (!room) return;
+
+      document.getElementById('activeRoomTitle').textContent = `${room.icon} ${room.name}`;
+      document.getElementById('activeRoomPromptPreview').textContent = room.prompt || 'Без системного промпта';
+
+      const container = document.getElementById('messagesContainer');
+      container.innerHTML = '';
+
+      if (room.messages.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="big-icon">${escapeHtml(room.icon)}</div>
+            <h3>${escapeHtml(room.name)}</h3>
+            <p>${escapeHtml(room.prompt || 'Контекст этой комнаты полностью изолирован. Напиши первое сообщение, чтобы начать.')}</p>
+          </div>
+        `;
+        return;
+      }
+
+      room.messages.forEach(msg => {
+        appendMessageElement(msg.role, msg.content, msg.time);
+      });
+      scrollToBottom();
+    }
+
+    function appendMessageElement(role, content, time) {
+      const container = document.getElementById('messagesContainer');
+      const empty = container.querySelector('.empty-state');
+      if (empty) empty.remove();
+
+      const wrapper = document.createElement('div');
+      wrapper.className = `message ${role}`;
+      wrapper.innerHTML = `
+        <div class="bubble">${formatMarkdown(content)}</div>
+        <div class="msg-time">${time || ''}</div>
+      `;
+      container.appendChild(wrapper);
+      scrollToBottom();
+      return wrapper;
+    }
+
+    function showTypingIndicator() {
+      const container = document.getElementById('messagesContainer');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'message assistant';
+      wrapper.id = 'typingIndicator';
+      wrapper.innerHTML = `
+        <div class="bubble">
+          <div class="typing"><span></span><span></span><span></span></div>
+        </div>
+      `;
+      container.appendChild(wrapper);
+      scrollToBottom();
+    }
+
+    function removeTypingIndicator() {
+      const el = document.getElementById('typingIndicator');
+      if (el) el.remove();
+    }
+
+    function updateStatusBar() {
+      const whStatus = document.getElementById('webhookStatus');
+      if (state.settings.webhookUrl) {
+        whStatus.textContent = '🟢 Webhook подключен';
+      } else {
+        whStatus.textContent = '🟡 Webhook не задан (демо-режим)';
+      }
+      document.getElementById('contextStatus').textContent = `Контекст: ${state.settings.historyLimit} сообщ.`;
+    }
+
+    function renderAll() {
+      renderSidebar();
+      renderChat();
+      updateStatusBar();
+    }
+
+    // Send Message Logic
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const room = getActiveRoom();
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      room.messages.push({ role: 'user', content: text, time: now });
+      input.value = '';
+      input.style.height = 'auto';
+      saveState();
+      renderSidebar();
+      appendMessageElement('user', text, now);
+
+      const historySlice = state.settings.historyLimit > 0
+        ? room.messages.slice(-state.settings.historyLimit)
+        : [];
+
+      const payload = {
+        chat_id: room.id,
+        chat_name: room.name,
+        system_prompt: room.prompt,
+        message: text,
+        history: historySlice.map(m => ({ role: m.role, content: m.content })),
+        timestamp: new Date().toISOString()
+      };
+
+      showTypingIndicator();
+
+      if (!state.settings.webhookUrl) {
+        setTimeout(() => {
+          removeTypingIndicator();
+          const demoReply = `**Демо-режим (Webhook пока не указан)**\n\nКогда ты вставишь ссылку на веб-приложение в ⚙️ Настройках, приложение отправит туда такой JSON:\n\`\`\`json\n${JSON.stringify({
+            chat_id: payload.chat_id,
+            chat_name: payload.chat_name,
+            system_prompt: payload.system_prompt,
+            message: payload.message,
+            history_count: payload.history.length
+          }, null, 2)}\n\`\`\``;
+          const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          room.messages.push({ role: 'assistant', content: demoReply, time: replyTime });
+          saveState();
+          renderSidebar();
+          appendMessageElement('assistant', demoReply, replyTime);
+        }, 500);
+        return;
+      }
+
+      try {
+        const response = await fetch(state.settings.webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+
+        const rawText = await response.text();
+        removeTypingIndicator();
+
+        if (!response.ok) {
+          throw new Error(`Ошибка сервера (${response.status}): ${rawText}`);
+        }
+
+        let aiReply = rawText;
+        try {
+          const json = JSON.parse(rawText);
+          aiReply = json.reply || json.text || json.message || json.output || rawText;
+        } catch (_) {
+          // Если Make вернул обычный текст вместо JSON — выводим как есть
+        }
+
+        const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        room.messages.push({ role: 'assistant', content: aiReply, time: replyTime });
+        saveState();
+        renderSidebar();
+        appendMessageElement('assistant', aiReply, replyTime);
+
+      } catch (err) {
+        removeTypingIndicator();
+        const errTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const errMsg = `⚠️ **Не удалось получить ответ от Webhook:**\n\`${err.message}\`\n\nПроверь ссылку Google Apps Script и настройки доступа при публикации (**У кого есть доступ: Все / Anyone**).`;
+        room.messages.push({ role: 'assistant', content: errMsg, time: errTime });
+        saveState();
+        appendMessageElement('assistant', errMsg, errTime);
+      }
+    }
+
+    // Helpers
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function formatMarkdown(text) {
+      let safe = escapeHtml(text);
+      safe = safe.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+      safe = safe.replace(/`([^`]+)`/g, '<code>$1</code>');
+      safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      safe = safe.replace(/\n/g, '<br>');
+      return safe;
+    }
+
+    function scrollToBottom() {
+      const container = document.getElementById('messagesContainer');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function closeModals() {
+      document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+    }
+
+    // Event Listeners
+    const messageInput = document.getElementById('messageInput');
+    messageInput.addEventListener('input', function () {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+    });
+
+    messageInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    document.getElementById('sendBtn').onclick = sendMessage;
+
+    document.getElementById('themeToggle').onclick = () => {
+      state.settings.theme = state.settings.theme === 'dark' ? 'light' : 'dark';
+      applyThemeAndColors();
+      saveState();
+    };
+
+    document.getElementById('mobileMenuBtn').onclick = () => {
+      document.getElementById('sidebar').classList.toggle('open');
+    };
+
+    document.getElementById('clearChatBtn').onclick = () => {
+      const room = getActiveRoom();
+      if (confirm(`Очистить историю сообщений в чате «${room.name}»?`)) {
+        room.messages = [];
+        saveState();
+        renderAll();
+      }
+    };
+
+    // Settings Modal
+    document.getElementById('openSettingsBtn').onclick = () => {
+      document.getElementById('webhookUrlInput').value = state.settings.webhookUrl || '';
+      document.getElementById('historyLimitInput').value = state.settings.historyLimit ?? 20;
+      document.querySelectorAll('.swatch').forEach(s => {
+        s.classList.toggle('active', s.dataset.color === state.settings.accent);
+      });
+      document.getElementById('settingsModal').classList.add('open');
+    };
+
+    document.querySelectorAll('.swatch').forEach(swatch => {
+      swatch.onclick = () => {
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+      };
+    });
+
+    document.getElementById('saveSettingsBtn').onclick = () => {
+      state.settings.webhookUrl = document.getElementById('webhookUrlInput').value.trim();
+      state.settings.historyLimit = parseInt(document.getElementById('historyLimitInput').value, 10) || 0;
+      const activeSwatch = document.querySelector('.swatch.active');
+      if (activeSwatch) state.settings.accent = activeSwatch.dataset.color;
+      applyThemeAndColors();
+      saveState();
+      closeModals();
+    };
+
+    // Export / Import
+    document.getElementById('exportDataBtn').onclick = () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `my-ai-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+    };
+
+    document.getElementById('importDataBtn').onclick = () => {
+      document.getElementById('importFileInput').click();
+    };
+
+    document.getElementById('importFileInput').onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const imported = JSON.parse(ev.target.result);
+          if (imported.rooms) {
+            state = imported;
+            applyThemeAndColors();
+            saveState();
+            renderAll();
+            closeModals();
+          }
+        } catch (_) {
+          alert('Некорректный JSON-файл');
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    // Room Modal (Create & Edit)
+    document.getElementById('openNewRoomBtn').onclick = () => {
+      editingRoomId = null;
+      document.getElementById('roomModalTitle').textContent = 'Новая комната';
+      document.getElementById('roomIconInput').value = '💬';
+      document.getElementById('roomNameInput').value = '';
+      document.getElementById('roomPromptInput').value = '';
+      document.getElementById('deleteRoomBtn').style.display = 'none';
+      document.getElementById('roomModal').classList.add('open');
+    };
+
+    document.getElementById('editRoomBtn').onclick = () => {
+      const room = getActiveRoom();
+      editingRoomId = room.id;
+      document.getElementById('roomModalTitle').textContent = 'Настройки комнаты';
+      document.getElementById('roomIconInput').value = room.icon;
+      document.getElementById('roomNameInput').value = room.name;
+      document.getElementById('roomPromptInput').value = room.prompt;
+      document.getElementById('deleteRoomBtn').style.display = state.rooms.length > 1 ? 'block' : 'none';
+      document.getElementById('roomModal').classList.add('open');
+    };
+
+    document.getElementById('saveRoomBtn').onclick = () => {
+      const icon = document.getElementById('roomIconInput').value.trim() || '💬';
+      const name = document.getElementById('roomNameInput').value.trim() || 'Новый чат';
+      const prompt = document.getElementById('roomPromptInput').value.trim();
+
+      if (editingRoomId) {
+        const room = state.rooms.find(r => r.id === editingRoomId);
+        if (room) {
+          room.icon = icon;
+          room.name = name;
+          room.prompt = prompt;
+        }
+      } else {
+        const newId = 'room_' + Date.now();
+        state.rooms.push({ id: newId, icon, name, prompt, messages: [] });
+        state.activeRoomId = newId;
+      }
+      saveState();
+      renderAll();
+      closeModals();
+    };
+
+    document.getElementById('deleteRoomBtn').onclick = () => {
+      if (state.rooms.length <= 1) return;
+      state.rooms = state.rooms.filter(r => r.id !== editingRoomId);
+      state.activeRoomId = state.rooms[0].id;
+      saveState();
+      renderAll();
+      closeModals();
+    };
+
+    // Init
+    loadState();
+    renderAll();
+  </script>
+</body>
+</html>
